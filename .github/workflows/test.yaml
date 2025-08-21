@@ -70,12 +70,12 @@ jobs:
           sed -i -e 's/terratorch==.*/-e file:\/\/\/home\/runner\/work\/terratorch\/terratorch/g' requirements/test.txt
           sed -i -e 's/terratorch==.*/-e file:\/\/\/home\/runner\/work\/terratorch\/terratorch/g' requirements/test.in
           #sed -i -e '/--torch-backend/c\      args: [requirements/test.in, -o, requirements/test.txt, --index-strategy, unsafe-best-match, --torch-backend, auto]' .pre-commit-config.yaml
-          pip-compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
           #pip install requirements/test.txt
           #git add requirements # needed to pass pre-commit
           pip install -r requirements/cpu-build.txt
           pip install -r requirements/cpu.txt
           pip install -r requirements/lint.txt
+          pip-compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
           VLLM_TARGET_DEVICE=cpu python setup.py install
           tools/mypy.sh 1 "${{ matrix.python-version }}"
           pip freeze
