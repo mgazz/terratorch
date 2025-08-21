@@ -57,5 +57,19 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
+      - uses: actions/checkout@master
+        with:
+          name: vllm-project/vllm
+      - name: Install vllm dependencies
+        with:
+          path: vllm
+        run: |
+          pip install -e .
+      - name: Install vllm dependencies
+        with:
+          path: vllm
+        run: |
+          pip install -e .
+          pre-commit run --show-diff-on-failure --color=always --all-files
 
 
