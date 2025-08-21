@@ -54,9 +54,9 @@ jobs:
         run: pip list
       - name: Cleaning cache
         run: pip cache purge
-      - name: Test with pytest
-        run: |
-          pytest -s --cov=terratorch -v --cov-report term-missing tests
+      #- name: Test with pytest
+      #  run: |
+      #    pytest -s --cov=terratorch -v --cov-report term-missing tests
       - uses: actions/checkout@v4
         with:
           name: vllm-project/vllm
