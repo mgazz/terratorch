@@ -61,7 +61,7 @@ jobs:
         run: |
           git clone https://github.com/vllm-project/vllm.git
           cd vllm
-          pip install -r requirements-dev.txt
+          pip install -r requirements/dev.txt
           pip install -e .
           pre-commit run --show-diff-on-failure --color=always --all-files
 
