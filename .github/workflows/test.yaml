@@ -75,6 +75,7 @@ jobs:
           pip install -r requirements/cpu-build.txt
           pip install -r requirements/cpu.txt
           pip install -r requirements/lint.txt
+          pip install pip-tools
           pip-compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
           VLLM_TARGET_DEVICE=cpu python setup.py install
           tools/mypy.sh 1 "${{ matrix.python-version }}"
