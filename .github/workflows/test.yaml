@@ -66,9 +66,10 @@ jobs:
           cd /home/runner/work
           git clone https://github.com/vllm-project/vllm.git
           cd vllm
-          # point to local terratorch
+          # point requiremenets to local terratorch
           sed -i -e 's/terratorch==.*/-e file:\/\/\/home\/runner\/work\/terratorch\/terratorch/g' requirements/test.txt
           sed -i -e 's/terratorch==.*/-e file:\/\/\/home\/runner\/work\/terratorch\/terratorch/g' requirements/test.in
+          sed -i -e '/--torch-backend/c\      args: [requirements/test.in, -o, requirements/test.txt, --index-strategy, unsafe-best-match, --torch-backend, auto]' .pre-commit-config.yaml
           git add requirements # needed to check precompile
           pip install -r requirements/cpu-build.txt
           pip install -r requirements/cpu.txt
