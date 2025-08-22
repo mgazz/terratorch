@@ -78,8 +78,7 @@ jobs:
           VLLM_TARGET_DEVICE=cpu python setup.py install
           pip install uv 
           uv pip compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
-          pip install requiremenets/test.txt
-          pip-compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto --hook-stage manual
-          #tools/mypy.sh 1 "${{ matrix.python-version }}"
+          pip install requirements/test.txt
+          pre-commit run --show-diff-on-failure --color=always --all-files --hook-stage manual
           pip freeze
 
