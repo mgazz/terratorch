@@ -75,7 +75,7 @@ jobs:
           pip install -r requirements/cpu-build.txt
           pip install -r requirements/cpu.txt
           pip install -r requirements/lint.txt
-          pip install uv
+          pip install uv mypy
           uv pip compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
           #pip-compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
           VLLM_TARGET_DEVICE=cpu python setup.py install
