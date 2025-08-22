@@ -75,10 +75,10 @@ jobs:
           pip install uv 
           uv venv
           source .venv/bin/activate
-          uv pip install -r requirements/cpu-build.txt
-          uv pip install -r requirements/cpu.txt
-          uv pip install -r requirements/lint.txt
-          VLLM_TARGET_DEVICE=cpu python setup.py install
+          uv pip install -r requirements/cpu-build.txt --index-strategy unsafe-best-match
+          uv pip install -r requirements/cpu.txt --index-strategy unsafe-best-match
+          uv pip install -r requirements/lint.txt --index-strategy unsafe-best-match
+          VLLM_TARGET_DEVICE=cpu uv python setup.py install --index-strategy unsafe-best-match
           uv pip compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
           uv pip install -r requirements/test.txt -f http://download.pytorch.org/whl/torch/
           pre-commit run --show-diff-on-failure --color=always --all-files --hook-stage manual
