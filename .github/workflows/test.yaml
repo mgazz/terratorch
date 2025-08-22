@@ -73,6 +73,8 @@ jobs:
           #pip install requirements/test.txt
           #git add requirements # needed to pass pre-commit
           pip install uv 
+          uv venv
+          source .venv/bin/activate
           uv pip install -r requirements/cpu-build.txt
           uv pip install -r requirements/cpu.txt
           uv pip install -r requirements/lint.txt
