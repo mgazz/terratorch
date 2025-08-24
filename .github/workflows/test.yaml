@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - vllm_test
     paths-ignore:
       - 'docs/**'
       - '*.md'
@@ -59,5 +60,29 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
+      - name: Install vLLM dependencies
+        run: |
+          sudo apt install -y --no-install-recommends ccache git curl wget ca-certificates gcc-12 g++-12 libtcmalloc-minimal4 libnuma-dev ffmpeg libsm6 libxext6 libgl1 jq lsof
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10 --slave /usr/bin/g++ g++ /usr/bin/g++-12
+      - name: Build vLLM
+        run: |
+          echo "python version: ${{ matrix.python-version }}"
+          if [ "${{ matrix.python-version }}" != "3.11" ]; then exit 0; fi
+          cd /home/runner/work
+          git clone https://github.com/vllm-project/vllm.git
+          cd vllm
+          # point requirements to local terratorch
+          sed -i -e 's/terratorch==.*/-e file:\/\/\/home\/runner\/work\/terratorch\/terratorch/g' requirements/test.txt
+          sed -i -e 's/terratorch==.*/-e file:\/\/\/home\/runner\/work\/terratorch\/terratorch/g' requirements/test.in
+          pip install uv 
+          uv venv
+          source .venv/bin/activate
+          uv pip install -r requirements/cpu-build.txt --index-strategy unsafe-best-match
+          uv pip install -r requirements/cpu.txt --index-strategy unsafe-best-match
+          uv pip install -r requirements/lint.txt --index-strategy unsafe-best-match
+          VLLM_USE_PRECOMPILED=1 uv pip install .
+          uv pip compile requirements/test.in -o requirements/test.txt --index-strategy unsafe-best-match --torch-backend auto
+          uv pip install -r requirements/test.txt -f http://download.pytorch.org/whl/torch/ -f https://download.pytorch.org/whl/torchaudio -f https://download.pytorch.org/whl/torchvision
+          SKIP=pip-compile pre-commit run --show-diff-on-failure --color=always --all-files --hook-stage manual 
 
 
