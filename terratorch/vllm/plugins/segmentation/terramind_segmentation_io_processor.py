@@ -170,8 +170,7 @@ class TerramindSegmentationIOProcessor(IOProcessor):
     ) -> Union[PromptType, Sequence[PromptType]]:
         # Just run the async function froma. synchronous context.
         # Since we are already in the vLLM server event loop we use that one.
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.pre_process_async(prompt, request_id, **kwargs))
+        return asyncio.run(self.pre_process_async(prompt, request_id, **kwargs))
 
     async def pre_process_async(
         self,

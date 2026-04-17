@@ -356,10 +356,12 @@ class SegmentationIOProcessor(IOProcessor):
         request_id: str | None = None,
         **kwargs,
     ) -> PromptType | Sequence[PromptType]:
-        # Just run the async function froma. synchronous context.
-        # Since we are already in the vLLM server event loop we use that one.
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.pre_process_async(prompt, request_id, **kwargs))
+        # TESTED: This now works with the thread pool implementation.
+        # Previously, calling asyncio.run() would fail with "cannot run two event loops" error
+        # because vLLM's serving infrastructure runs in an event loop.
+        # With the thread pool, this executes in an isolated worker thread that has no
+        # pre-existing event loop, allowing asyncio.run() to safely create its own event loop.
+        return asyncio.run(self.pre_process_async(prompt, request_id, **kwargs))
 
     async def pre_process_async(
         self,
