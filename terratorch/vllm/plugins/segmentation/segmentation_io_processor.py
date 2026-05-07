@@ -445,10 +445,11 @@ class SegmentationIOProcessor(IOProcessor):
             # Apply standardization
             window = self.datamodule.test_transform(image=window.squeeze().numpy().transpose(1, 2, 0))
             try:
-                window = self.datamodule.aug(window)["image"]
+                # For AugmentationSequential, we need to pass data_keys parameter
+                window = self.datamodule.aug(window, data_keys=["image"])["image"]
             except:
                 window["image"] = window["image"][None, :, :, :]
-                window = self.datamodule.aug(window)["image"]
+                window = self.datamodule.aug(window, data_keys=["image"])["image"]
 
             multi_modal_data = {
                 "pixel_values": window.to(torch.float16)[0],
