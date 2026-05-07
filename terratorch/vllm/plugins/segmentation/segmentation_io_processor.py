@@ -455,6 +455,11 @@ class SegmentationIOProcessor(IOProcessor):
         # This eliminates race conditions without needing locks
         aug = copy.deepcopy(self._aug_template)
         
+        # Ensure data_keys is properly set after deepcopy (deepcopy may not preserve it correctly)
+        if hasattr(aug, 'transform_op') and hasattr(aug.transform_op, 'data_keys'):
+            if aug.transform_op.data_keys is None:
+                aug.transform_op.data_keys = ["image"]
+        
         for window in windows:
             # Apply standardization
             window = self.datamodule.test_transform(image=window.squeeze().numpy().transpose(1, 2, 0))
