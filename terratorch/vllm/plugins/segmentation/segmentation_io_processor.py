@@ -96,6 +96,11 @@ class SegmentationIOProcessor(IOProcessor):
         self.plugin_config = PluginConfig.model_validate_json(plugin_config_string)
 
         self.datamodule = generate_datamodule(self.model_config["data"])
+        
+        # Fix AugmentationSequential data_keys if it's None to prevent race conditions under high load
+        if hasattr(self.datamodule, 'aug') and hasattr(self.datamodule.aug, 'transform_op'):
+            if hasattr(self.datamodule.aug.transform_op, 'data_keys') and self.datamodule.aug.transform_op.data_keys is None:
+                self.datamodule.aug.transform_op.data_keys = ["image"]
 
         self.tiled_inference_parameters = self._init_tiled_inference_parameters_info()
         self.batch_size = 1
@@ -445,11 +450,10 @@ class SegmentationIOProcessor(IOProcessor):
             # Apply standardization
             window = self.datamodule.test_transform(image=window.squeeze().numpy().transpose(1, 2, 0))
             try:
-                # For AugmentationSequential, we need to pass data_keys parameter
-                window = self.datamodule.aug(window, data_keys=["image"])["image"]
+                window = self.datamodule.aug(window)["image"]
             except:
                 window["image"] = window["image"][None, :, :, :]
-                window = self.datamodule.aug(window, data_keys=["image"])["image"]
+                window = self.datamodule.aug(window)["image"]
 
             multi_modal_data = {
                 "pixel_values": window.to(torch.float16)[0],
