@@ -450,9 +450,18 @@ class SegmentationIOProcessor(IOProcessor):
             # Apply standardization
             window = self.datamodule.test_transform(image=window.squeeze().numpy().transpose(1, 2, 0))
             try:
+                # Ensure data_keys is set before calling aug to prevent race conditions
+                if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
+                    if self.datamodule.aug.transform_op.data_keys is None:
+                        self.datamodule.aug.transform_op.data_keys = ["image"]
                 window = self.datamodule.aug(window)["image"]
-            except:
+            except Exception as e:
+                logger.warning(f"First augmentation attempt failed: {e}. Retrying with adjusted dimensions.")
                 window["image"] = window["image"][None, :, :, :]
+                # Ensure data_keys is set before retry
+                if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
+                    if self.datamodule.aug.transform_op.data_keys is None:
+                        self.datamodule.aug.transform_op.data_keys = ["image"]
                 window = self.datamodule.aug(window)["image"]
 
             multi_modal_data = {
