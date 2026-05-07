@@ -8,6 +8,7 @@ import datetime
 import logging
 import os
 import tempfile
+import threading
 import urllib.request
 import uuid
 import warnings
@@ -96,6 +97,9 @@ class SegmentationIOProcessor(IOProcessor):
         self.plugin_config = PluginConfig.model_validate_json(plugin_config_string)
 
         self.datamodule = generate_datamodule(self.model_config["data"])
+        
+        # Initialize lock for thread-safe augmentation access
+        self._aug_lock = threading.Lock()
         
         # Fix AugmentationSequential data_keys if it's None to prevent race conditions under high load
         if hasattr(self.datamodule, 'aug') and hasattr(self.datamodule.aug, 'transform_op'):
@@ -449,20 +453,24 @@ class SegmentationIOProcessor(IOProcessor):
         for window in windows:
             # Apply standardization
             window = self.datamodule.test_transform(image=window.squeeze().numpy().transpose(1, 2, 0))
-            try:
+            
+            # Use lock to ensure thread-safe access to augmentation
+            with self._aug_lock:
                 # Ensure data_keys is set before calling aug to prevent race conditions
                 if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
                     if self.datamodule.aug.transform_op.data_keys is None:
                         self.datamodule.aug.transform_op.data_keys = ["image"]
-                window = self.datamodule.aug(window)["image"]
-            except Exception as e:
-                logger.warning(f"First augmentation attempt failed: {e}. Retrying with adjusted dimensions.")
-                window["image"] = window["image"][None, :, :, :]
-                # Ensure data_keys is set before retry
-                if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
-                    if self.datamodule.aug.transform_op.data_keys is None:
-                        self.datamodule.aug.transform_op.data_keys = ["image"]
-                window = self.datamodule.aug(window)["image"]
+                
+                try:
+                    window = self.datamodule.aug(window)["image"]
+                except Exception as e:
+                    logger.warning(f"First augmentation attempt failed: {e}. Retrying with adjusted dimensions.")
+                    window["image"] = window["image"][None, :, :, :]
+                    # Ensure data_keys is still set before retry
+                    if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
+                        if self.datamodule.aug.transform_op.data_keys is None:
+                            self.datamodule.aug.transform_op.data_keys = ["image"]
+                    window = self.datamodule.aug(window)["image"]
 
             multi_modal_data = {
                 "pixel_values": window.to(torch.float16)[0],
