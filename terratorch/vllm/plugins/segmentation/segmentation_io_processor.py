@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import copy
 import datetime
 import logging
 import os
 import tempfile
-import threading
 import urllib.request
 import uuid
 import warnings
@@ -98,13 +98,14 @@ class SegmentationIOProcessor(IOProcessor):
 
         self.datamodule = generate_datamodule(self.model_config["data"])
         
-        # Initialize lock for thread-safe augmentation access
-        self._aug_lock = threading.Lock()
+        # Store the augmentation template for creating per-request instances
+        # This avoids shared mutable state and eliminates race conditions
+        self._aug_template = self.datamodule.aug
         
-        # Fix AugmentationSequential data_keys if it's None to prevent race conditions under high load
-        if hasattr(self.datamodule, 'aug') and hasattr(self.datamodule.aug, 'transform_op'):
-            if hasattr(self.datamodule.aug.transform_op, 'data_keys') and self.datamodule.aug.transform_op.data_keys is None:
-                self.datamodule.aug.transform_op.data_keys = ["image"]
+        # Fix data_keys in the template if needed
+        if hasattr(self._aug_template, 'transform_op') and hasattr(self._aug_template.transform_op, 'data_keys'):
+            if self._aug_template.transform_op.data_keys is None:
+                self._aug_template.transform_op.data_keys = ["image"]
 
         self.tiled_inference_parameters = self._init_tiled_inference_parameters_info()
         self.batch_size = 1
@@ -450,27 +451,20 @@ class SegmentationIOProcessor(IOProcessor):
             location_coords = None
 
         prompts = []
+        # Create a per-request augmentation instance to avoid shared mutable state
+        # This eliminates race conditions without needing locks
+        aug = copy.deepcopy(self._aug_template)
+        
         for window in windows:
             # Apply standardization
             window = self.datamodule.test_transform(image=window.squeeze().numpy().transpose(1, 2, 0))
             
-            # Use lock to ensure thread-safe access to augmentation
-            with self._aug_lock:
-                # Ensure data_keys is set before calling aug to prevent race conditions
-                if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
-                    if self.datamodule.aug.transform_op.data_keys is None:
-                        self.datamodule.aug.transform_op.data_keys = ["image"]
-                
-                try:
-                    window = self.datamodule.aug(window)["image"]
-                except Exception as e:
-                    logger.warning(f"First augmentation attempt failed: {e}. Retrying with adjusted dimensions.")
-                    window["image"] = window["image"][None, :, :, :]
-                    # Ensure data_keys is still set before retry
-                    if hasattr(self.datamodule.aug, 'transform_op') and hasattr(self.datamodule.aug.transform_op, 'data_keys'):
-                        if self.datamodule.aug.transform_op.data_keys is None:
-                            self.datamodule.aug.transform_op.data_keys = ["image"]
-                    window = self.datamodule.aug(window)["image"]
+            try:
+                window = aug(window)["image"]
+            except Exception as e:
+                logger.warning(f"First augmentation attempt failed: {e}. Retrying with adjusted dimensions.")
+                window["image"] = window["image"][None, :, :, :]
+                window = aug(window)["image"]
 
             multi_modal_data = {
                 "pixel_values": window.to(torch.float16)[0],
