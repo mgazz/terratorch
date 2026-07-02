@@ -80,6 +80,9 @@ dependencies = [
 terratorch_segmentation = "terratorch.vllm.plugins.segmentation:register_segmentation_plugin"
 terratorch_tm_segmentation = "terratorch.vllm.plugins.segmentation:register_terramind_segmentation_plugin"
 
+[project.entry-points."vllm.general_plugins"]
+terratorch_fix = "terratorch.vllm.plugins.general:register_terratorch_fix"
+
 [project.optional-dependencies]
 logging = [
   "wandb>=0.18.0",
