@@ -71,8 +71,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          mike deploy --push --update-aliases $VERSION stable
-          mike set-default --push stable
+          mike deploy --update-aliases "$VERSION" stable
+          mike set-default stable
+          git push origin gh-pages
 
       - name: Check artifacts
         run: ls -l dist

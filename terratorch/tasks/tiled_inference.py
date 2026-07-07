@@ -205,7 +205,6 @@ def get_input_chips(
 def prepare_tiled_inference_input(
     input_batch: torch.Tensor,
     out_channels: int | None = None,
-    inference_parameters: TiledInferenceParameters | None = None,
     crop: int = 224,
     stride: int = 192,
     delta: int = 8,
@@ -217,21 +216,6 @@ def prepare_tiled_inference_input(
     padding: str | bool = "reflect",
     device: str | None = None,
 ) -> tuple[list[InferenceInput], Callable[[torch.Tensor], dict | torch.Tensor], int, int, int, str | torch.device]:
-
-    if inference_parameters is not None:
-        # TODO: Remove inference_parameters in later version 1.3.
-        warnings.warn(
-            "Using inference_parameters and ignoring other parameters."
-            "The parameter `inference_parameters` is deprecated and is removed in version 1.3, "
-            "please pass the parameters directly to `tiled_inference`. ",
-            DeprecationWarning,
-        )
-        h_crop = inference_parameters.h_crop
-        h_stride = inference_parameters.h_stride
-        w_crop = inference_parameters.w_crop
-        w_stride = inference_parameters.w_stride
-        delta = inference_parameters.delta
-        blend_overlaps = inference_parameters.blend_overlaps
 
     if isinstance(input_batch, dict):
         # Handle dict inputs for tiled inference
@@ -419,11 +403,38 @@ def tiled_inference(
         torch.Tensor: The result of the inference
     """
 
+    if inference_parameters is not None:
+        # TODO: Remove inference_parameters in version 1.3.
+        warnings.warn(
+            "Using inference_parameters and ignoring other parameters."
+            "The parameter `inference_parameters` is deprecated and is removed in version 1.3, "
+            "please pass the parameters directly to `tiled_inference`. ",
+            DeprecationWarning,
+        )
+        h_crop = inference_parameters.h_crop
+        h_stride = inference_parameters.h_stride
+        w_crop = inference_parameters.w_crop
+        w_stride = inference_parameters.w_stride
+        delta = inference_parameters.delta
+        blend_overlaps = inference_parameters.blend_overlaps
+        average_patches = inference_parameters.average_patches
+        batch_size = inference_parameters.batch_size
+        verbose = inference_parameters.verbose
+
+    h_crop = h_crop or crop
+    w_crop = w_crop or crop
+
+    # If the input already fits within a single chip, skip tiling and run a single forward pass.
+    sample_tensor = next(iter(input_batch.values())) if isinstance(input_batch, dict) else input_batch
+    h_img, w_img = sample_tensor.shape[-2:]
+    if h_img <= h_crop and w_img <= w_crop:
+        with torch.no_grad():
+            return model_forward(input_batch, **kwargs)
+
     coordinates_and_inputs, tensor_reshape, input_batch_size, h_img, w_img, device, delta = (
         prepare_tiled_inference_input(
             input_batch=input_batch,
             out_channels=out_channels,
-            inference_parameters=inference_parameters,
             crop=crop,
             stride=stride,
             delta=delta,

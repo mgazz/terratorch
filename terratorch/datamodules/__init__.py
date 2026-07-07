@@ -4,6 +4,9 @@ import logging
 
 from terratorch.datamodules.era5 import ERA5DataModule
 from terratorch.datamodules.fire_scars import FireScarsNonGeoDataModule
+from terratorch.datamodules.generic_nongeo_od_data_module import (
+    GenericNonGeoObjectDetectionDataModule,
+)
 from terratorch.datamodules.generic_pixel_wise_data_module import (
     GenericNonGeoPixelwiseRegressionDataModule,
     GenericNonGeoSegmentationDataModule,
@@ -81,6 +84,7 @@ __all__ = [
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoPixelwiseRegressionDataModule",
     "GenericNonGeoClassificationDataModule",
+    "GenericNonGeoObjectDetectionDataModule",
     # "GenericNonGeoRegressionDataModule",
     "BurnIntensityNonGeoDataModule",
     "CarbonFluxNonGeoDataModule",

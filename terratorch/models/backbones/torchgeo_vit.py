@@ -8,7 +8,7 @@ from typing import List
 import huggingface_hub
 import torch
 from torch import nn
-from torchgeo.models.vit import ViTSmall16_Weights, vit_small_patch16_224
+from torchgeo.models import ViTSmall16_Weights, vit_small_patch16_224
 from torchvision.models._api import Weights, WeightsEnum
 
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
@@ -56,6 +56,18 @@ look_up_table = {
     "B10": "CIRRUS",
     "B11": "SWIR_1",
     "B12": "SWIR_2",
+
+    "B1": "COASTAL_AEROSOL",
+    "B2": "BLUE",
+    "B3": "GREEN",
+    "B4": "RED",
+    "B5": "RED_EDGE_1",
+    "B6": "RED_EDGE_2",
+    "B7": "RED_EDGE_3",
+    "B8": "NIR_BROAD",
+    "B8a": "NIR_NARROW",
+    "B9": "WATER_VAPOR",
+
     "VV": "VV",
     "VH": "VH",
     "R": "RED",
@@ -400,7 +412,13 @@ def load_vit_weights(
         logging.info(msg)
     elif weights is not None:
         checkpoint_model = weights.get_state_dict(progress=True)
-        checkpoint_model = remove_keys(checkpoint_model, model.state_dict())
+        state_dict = model.state_dict()
+        
+        for k in ["head.weight", "head.bias"]:
+            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
+                logging.info(f"Removing key {k} from pretrained checkpoint")
+                del checkpoint_model[k]
+        
         checkpoint_model = select_patch_embed_weights(
             checkpoint_model, model, pretrained_bands, model_bands, custom_weight_proj
         )

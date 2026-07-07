@@ -94,6 +94,36 @@ TerraTorch requires gdal to be installed, which can be quite a complex process.
 If you don't have GDAL set up on your system, we recommend using a conda
 environment and installing it with `conda install -c conda-forge gdal`. If you
 are installing from `conda-forge` it probably won't be a problem. 
+### Optional Dependencies
+
+#### RF-DETR
+RF-DETR integration is optional and depends on the upstream `rfdetr` package.
+
+Install optional RF-DETR support with:
+```bash
+pip install terratorch[rfdetr]
+```
+
+For contributors using editable installs:
+```bash
+pip install -e .[test,rfdetr]
+```
+
+#### Deformable DETR
+Some advanced object detection tests use the Deformable DETR variant, 
+which requires compiling CUDA operators for `MultiScaleDeformableAttention`.
+
+**Note:** Core DETR functionality works without this extension. 
+Deformable DETR tests will be gracefully skipped if the operators are not compiled.
+
+To enable Deformable DETR support, compile the CUDA operators:
+```bash
+git clone https://github.com/fundamentalvision/Deformable-DETR.git
+cd Deformable-DETR/models/ops
+sh make.sh
+```
+
+**Requirements:** Linux, CUDA ≥ 9.2, GCC ≥ 5.4
 
 ### Install as a developer
 To install as a developer (e.g. to extend the library):
@@ -102,7 +132,22 @@ git clone https://github.com/torchgeo/terratorch.git
 cd terratorch
 pip install -e .[test]
 ```
-To install terratorch with partial (work in development) support for Weather Foundation Models, `pip install -e .[wxc]`, which currently works just for `Python >= 3.11`. 
+
+### Optional Dependencies
+
+TerraTorch supports several optional features that can be installed separately:
+
+- **VLLM support**: `pip install terratorch[vllm]`
+- **Weather Foundation Models**: `pip install terratorch[wxc]` (Python >= 3.11 only)
+- **PEFT (Parameter-Efficient Fine-Tuning)**: `pip install terratorch[peft]`
+- **Visualization tools**: `pip install terratorch[visualize]`
+- **GeoBench v2**: `pip install terratorch[geobenchv2]`
+- **Logging with Weights & Biases**: `pip install terratorch[logging]`
+- **MMSegmentation support**: `pip install terratorch[mmseg]`
+- **Surya support**: `pip install terratorch[surya]`
+- **Tortilla file support**: `pip install terratorch[tortilla]` - Required for loading datasets from tortilla files
+
+You can install multiple optional dependencies at once: `pip install terratorch[vllm,peft,logging]`
 
 ## Documentation
 

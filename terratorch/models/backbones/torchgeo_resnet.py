@@ -8,8 +8,7 @@ from typing import List
 import huggingface_hub
 import torch
 from torch import nn
-from torchgeo.models import resnet
-from torchgeo.models.resnet import ResNet18_Weights, ResNet50_Weights, ResNet152_Weights, resnet18, resnet50, resnet152
+from torchgeo.models import ResNet18_Weights, ResNet50_Weights, ResNet152_Weights, resnet18, resnet50, resnet152
 from torchvision.models._api import Weights, WeightsEnum
 
 from terratorch.datasets.utils import OpticalBands, SARBands
@@ -75,6 +74,18 @@ look_up_table = {
     "B10": "CIRRUS",
     "B11": "SWIR_1",
     "B12": "SWIR_2",
+
+    "B1": "COASTAL_AEROSOL",
+    "B2": "BLUE",
+    "B3": "GREEN",
+    "B4": "RED",
+    "B5": "RED_EDGE_1",
+    "B6": "RED_EDGE_2",
+    "B7": "RED_EDGE_3",
+    "B8": "NIR_BROAD",
+    "B8a": "NIR_NARROW",
+    "B9": "WATER_VAPOR",
+
     "VV": "VV",
     "VH": "VH",
     "R": "RED",
