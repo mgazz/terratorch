@@ -318,6 +318,34 @@ The following environment variables are set based on command-line options:
 - `TERRATORCH_TMP_ROOT`: Set when `--terratorch-tmp-root` is provided. Specifies
   custom temporary directory location.
 
+#### Relocating test assets off `/dccstor`
+
+The integration tests default to the shared `/dccstor` storage. On clusters where
+that mount is unavailable, override these variables to point at a local mirror of
+the data (all default to their original `/dccstor` locations, so unset behaviour is
+unchanged):
+
+- `TERRATORCH_DATA_ROOT`: Storage prefix that replaces `/dccstor` in the fit
+  configs' input-dataset paths (e.g. `geofm-datasets`, `geofm-finetuning`).
+  Default: `/dccstor`. Set this to the root of a mirror that preserves the
+  `/dccstor/...` sub-paths (e.g. mirror `/dccstor/geofm-datasets/...` to
+  `$TERRATORCH_DATA_ROOT/geofm-datasets/...`).
+- `TERRATORCH_TEST_MODELS_ROOT`: Location of the pre-trained testing models used by
+  the legacy predict tests. Default:
+  `$TERRATORCH_DATA_ROOT/terratorch/shared/integrationtests/testing_models`.
+- `TERRATORCH_TEST_CHECKPOINTS_ROOT`: Location of the legacy checkpoints. Defaults
+  to `TERRATORCH_TEST_MODELS_ROOT`.
+- `TERRATORCH_TMP_ROOT`: Writable directory for fit outputs/checkpoints. Default:
+  `$TERRATORCH_DATA_ROOT/terratorch/tmp`.
+
+Example (mirror rooted at `/proj/.../terratorch/datasets`):
+
+```bash
+export TERRATORCH_DATA_ROOT=/proj/partnership-mat/terratorch/datasets
+export TERRATORCH_TMP_ROOT=/proj/partnership-mat/terratorch/tmp
+pytest integrationtests/test_base_set.py
+```
+
 ### Direct Tox Usage
 
 You can also run tox directly with these environment variables:
