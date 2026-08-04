@@ -83,6 +83,8 @@ def lookup_task_name(class_path):
         return "segmentation"
     elif "PixelwiseRegressionTask" in class_path:
         return "regression"
+    elif "WxCTask" in class_path:
+        return None  # WxCTask doesn't use task parameter
     else:
         return None
 
@@ -95,7 +97,13 @@ class InferenceRunner(nn.Module):
         self.task_type = config["model"]["class_path"]
         task_name = lookup_task_name(model_conf["class_path"])
         model_factory = MODEL_FACTORY_REGISTRY.build(model_conf["init_args"]["model_factory"])
-        self.model = model_factory.build_model(task=task_name, **model_conf["init_args"]["model_args"])
+        
+        # Handle factories that don't use task parameter (like WxCModelFactory)
+        if task_name is not None:
+            self.model = model_factory.build_model(task=task_name, **model_conf["init_args"]["model_args"])
+        else:
+            self.model = model_factory.build_model(**model_conf["init_args"]["model_args"])
+        
         self.input_definition = InputDefinition(**config["input"])
 
     def _parse_and_validate_multimodal_data(self, **kwargs: object) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
